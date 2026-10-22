@@ -157,12 +157,14 @@ async function joinWith(name){
 }
 function subscribe(){
   unsubs.forEach(u=>u());unsubs=[];
+  // Only trust well-formed data from the database: numbers stay numbers, sketches must be JPEG data from a valid player id
   unsubs.push(gref().onSnapshot(s=>{const prev=game;game=s.data()||null;
+    if(game){game.round=+game.round||0;game.lastAdd=Object.fromEntries(Object.entries(game.lastAdd||{}).map(([k,v])=>[k,+v||0]))}
     if(game&&game.phase==="ended"){const by=game.endedBy;S.err="";S.notice=by===me?"You ended the game.":`${pname(by)} ended the game.`;goHome();return}
     if(prev&&game&&(prev.phase!==game.phase||prev.round!==game.round)){if(game.phase==="voting")myPick=null;}
     render()}));
-  unsubs.push(db.collection("games/"+code+"/players").onSnapshot(q=>{players=q.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>a.joinedAt-b.joinedAt);render()}));
-  unsubs.push(db.collection("games/"+code+"/sketches").onSnapshot(q=>{sketches=q.docs.map(d=>({id:d.id,...d.data()}));if(game?.phase==="voting")render();else hostDrive()}));
+  unsubs.push(db.collection("games/"+code+"/players").onSnapshot(q=>{players=q.docs.map(d=>({id:d.id,...d.data(),score:+d.data().score||0})).sort((a,b)=>a.joinedAt-b.joinedAt);render()}));
+  unsubs.push(db.collection("games/"+code+"/sketches").onSnapshot(q=>{sketches=q.docs.map(d=>({id:d.id,...d.data()})).filter(s=>/^[\w-]+$/.test(s.pid)&&/^data:image\/jpeg;base64,[\w+/=]+$/.test(s.img));if(game?.phase==="voting")render();else hostDrive()}));
   joinRoom();
   unsubs.push(db.collection("games/"+code+"/votes").onSnapshot(q=>{votes=q.docs.map(d=>({id:d.id,...d.data()}));if(game?.phase==="voting")render();hostDrive()}));
 }
