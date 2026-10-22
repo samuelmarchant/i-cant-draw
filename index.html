@@ -21,7 +21,7 @@ body{font-size:18px;background:var(--bg);color:var(--ink);font-family:Fredoka,"T
 .card{background:var(--card);border-radius:28px;padding:36px;box-shadow:0 10px 30px rgba(120,20,20,.10);border:1px solid var(--line)}
 h1{font-size:32px;margin:0 0 12px}h2{margin:0 0 14px;font-size:26px}p{color:var(--mut);margin:0 0 20px;line-height:1.5}@media(max-width:600px){.card{padding:24px}}
 input{font:inherit;font-size:20px;width:100%;padding:14px 16px;border-radius:16px;border:2px solid var(--line);background:var(--bg);color:var(--ink);outline:none}
-input:focus{border-color:var(--acct)}
+input:focus{border-color:var(--acct)}input::placeholder{text-transform:none}
 .btn{font:inherit;font-weight:600;font-size:19px;border:0;border-radius:16px;padding:14px 20px;background:#6B5DC3;color:#fff;cursor:pointer;box-shadow:0 5px 0 #4A3E99;transition:transform .08s}.btn:hover:not(:disabled){background:#5E50B6}
 .btn:active{transform:translateY(3px);box-shadow:0 2px 0 #4A3E99}.btn:disabled{opacity:.5;cursor:default}
 .btn.ghost{background:#D2CBFF;color:#1F1F1F;box-shadow:0 5px 0 #A99EEB;border:0}.btn.ghost:hover:not(:disabled){background:#C4BBFA}.btn.ghost:active{box-shadow:0 2px 0 #A99EEB}
@@ -39,9 +39,8 @@ input:focus{border-color:var(--acct)}
 .canvasbox{background:#fff;border-radius:20px;border:3px dashed var(--line);overflow:hidden;touch-action:none}
 canvas{display:block;width:100%;height:auto;cursor:crosshair}
 .tools{display:flex;gap:16px;flex-wrap:nowrap;margin-top:20px;align-items:center;justify-content:space-between}
-.pal{display:flex;gap:clamp(4px,1vw,10px);flex-wrap:wrap;align-items:center;flex:1;min-width:0}
+.pal,.cols,.szs{display:flex;gap:clamp(4px,1vw,10px);flex-wrap:wrap;align-items:center}.pal{flex:1;min-width:0}.szs{margin-left:8px}
 .acts{display:flex;gap:10px;flex:none;align-items:center}
-@media(max-width:560px){.acts{flex-direction:column;align-items:stretch}.acts .btn{padding:8px 12px!important}}
 .sw{width:clamp(22px,4vw,34px);height:clamp(22px,4vw,34px);flex:none;padding:0;border-radius:50%;border:3px solid transparent;cursor:pointer}.sw.on{border-color:var(--ink)}
 .sz{font:inherit;width:clamp(30px,5vw,40px);height:clamp(30px,5vw,40px);flex:none;padding:0;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer;display:grid;place-items:center}
 .sz.on{border-color:var(--acct)}
@@ -58,6 +57,18 @@ canvas{display:block;width:100%;height:auto;cursor:crosshair}
 .instr{margin-top:36px;background:var(--tint);border:2px solid var(--red);border-radius:24px;padding:24px}.instr h2{color:var(--acct);margin:0 0 16px}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
 .step{background:var(--card);border-radius:18px;padding:18px;line-height:1.45;border:1px solid var(--line)}.step b{color:var(--acct)}
+/* Mobile: full width buttons, palette under the pad with big touch targets, one line leaderboard rows */
+@media(max-width:600px){
+.btn{width:100%}
+.tools{flex-direction:column;align-items:stretch;gap:14px;margin-top:12px}
+.pal{flex-direction:column;align-items:stretch;gap:12px}
+.cols{display:grid;grid-template-columns:repeat(5,auto);justify-content:space-between;row-gap:12px}
+.sw{width:min(48px,calc((100vw - 120px)/5));height:min(48px,calc((100vw - 120px)/5))}
+.szs{margin-left:0;justify-content:center;gap:12px}.sz{width:48px;height:48px}
+.acts{flex-direction:column;align-items:stretch}.acts .btn{padding:12px 16px!important}
+.board .pl{gap:8px;padding:12px;min-width:0}.board .row{flex-wrap:nowrap;gap:8px;min-width:0}.board .pl>.row:first-child{flex:1}
+.board b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.board .muted,.board .pill{white-space:nowrap}.board .pill{font-size:15px;padding:4px 10px}.board .av{width:32px;height:32px}.board .rank{width:20px}
+}
 </style></head><body>
 <div class="top"><div class="brand"><div class="logo">✍️</div><span style="flex:1">I can't draw</span><button class="endbtn" id="eg" hidden>End game</button></div></div>
 <div class="wrap"><div class="card" id="app"><p>Connecting…</p></div></div>
@@ -218,9 +229,9 @@ function render(){
   if(!code){
     app.innerHTML=`<h1>Draw it with your <span style="color:var(--acct)">other</span> hand</h1>
     <p>A party sketch game for up to 10 players. 5 rounds, 60 seconds each, then everyone votes for their favourite.</p>
-    <input id="nm" maxlength="16" placeholder="Your name" value="${esc(S.name||"")}">
+    <input id="nm" maxlength="16" placeholder="Your Name" value="${esc(S.name||"")}">
     <div class="row" style="margin-top:18px"><button class="btn" id="cr">Create a game</button></div>
-    <div class="row" style="margin-top:28px"><input class="grow" id="cd" maxlength="6" placeholder="Game code" value="${esc(S.prefill||"")}" style="text-transform:uppercase"><button class="btn ghost" id="jn">Join</button></div>
+    <div class="row" style="margin-top:28px"><input class="grow" id="cd" maxlength="6" placeholder="Game Code" value="${esc(S.prefill||"")}" style="text-transform:uppercase"><button class="btn ghost" id="jn">Join</button></div>
     ${S.notice?`<div class="hint" style="margin:18px 0 0">${esc(S.notice)}</div>`:""}${S.err?`<div class="err">${esc(S.err)}</div>`:""}
     <section class="instr"><h2>Instructions</h2><div class="steps"><div class="step"><b>1.</b> Swap hands. Draw with your non dominant hand only.</div><div class="step"><b>2.</b> Sketch the prompt before the 60 second timer runs out.</div><div class="step"><b>3.</b> Vote for your favourite sketch each round.</div><div class="step"><b>4.</b> Most votes after 5 rounds wins.</div></div></section>`;
     const nm=()=>{const v=$("#nm").value.trim();S.name=v;if(!v){S.err="Enter your name first.";render();return null}S.err="";return v};
@@ -247,8 +258,8 @@ function render(){
     app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} of ${ROUNDS}</span><div class="word">${esc(game.word)}</div></div>${timerHTML()}</div>
     <div class="hint">✋ Non dominant hand only!</div>
     <div class="canvasbox"><canvas id="cv" width="800" height="600"></canvas></div>
-    <div class="tools"><div class="pal">${COLORS.map((c,i)=>`<button class="sw${i==0?" on":""}" data-c="${c}" style="background:${c};${c==="#FFFFFF"?"box-shadow:inset 0 0 0 1px #ccc":""}" aria-label="colour"></button>`).join("")}
-    <span style="width:8px"></span>${[4,10,22].map((s,i)=>`<button class="sz${i==1?" on":""}" data-s="${s}"><span style="width:${s/1.6+3}px;height:${s/1.6+3}px;border-radius:50%;background:currentColor"></span></button>`).join("")}
+    <div class="tools"><div class="pal"><div class="cols">${COLORS.map(c=>`<button class="sw${c===pen.c?" on":""}" data-c="${c}" style="background:${c};${c==="#FFFFFF"?"box-shadow:inset 0 0 0 1px #ccc":""}" aria-label="colour"></button>`).join("")}</div>
+    <div class="szs">${[4,10,22].map(s=>`<button class="sz${s===pen.s?" on":""}" data-s="${s}"><span style="width:${s/1.6+3}px;height:${s/1.6+3}px;border-radius:50%;background:currentColor"></span></button>`).join("")}</div>
     </div><div class="acts"><button class="btn ghost" id="dm" style="padding:8px 14px" title="Let the game draw it for you (no promises)">🪄 Draw it for me</button><button class="btn tert" id="un" style="padding:8px 14px">Undo</button><button class="btn tert" id="cl" style="padding:8px 14px">Clear</button>
     <button class="btn" id="dn" style="padding:8px 22px">Done</button></div></div><p id="ds" class="muted" style="margin-top:10px"></p>`;
     setupCanvas();updateDrawStatus();timerUpdate();return;
@@ -290,7 +301,7 @@ function render(){
 function updateDrawStatus(){const d=$("#ds");if(!d)return;const n=sketches.filter(s=>s.round===game.round).length,tot=activePlayers().length;
   d.textContent=submitted[game.round]?`Sketch sent! ${n}/${tot} finished.`:`${n}/${tot} players finished.`;
   if(submitted[game.round]){$("#dn").disabled=true;$("#cv").style.pointerEvents="none"}}
-let ctx,cv,strokes=[],cur=null,pen={c:"#2A1416",s:10};
+let ctx,cv,strokes=[],cur=null,pen={c:"#2A1416",s:matchMedia("(max-width:600px)").matches?4:10};
 function setupCanvas(){
   cv=$("#cv");ctx=cv.getContext("2d");strokes=[];cur=null;redraw();
   const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};

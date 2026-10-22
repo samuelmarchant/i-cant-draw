@@ -33,7 +33,7 @@ Serve the folder over HTTP (ES modules do not load from `file://`):
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000. It talks to the real Firebase database, so local games are real games. Use two browser windows (one private) to test multiplayer. If anonymous sign-in fails on localhost, check Authentication > Settings > Authorized domains includes `localhost`.
+The Firebase API key is restricted to the live site, so on localhost the game shows "Couldn't connect" (`auth/requests-from-referer-http://localhost:8000-are-blocked`). Leave that restriction in place. To test UI changes locally, serve a throwaway copy (outside the repo) whose three Firebase `import` lines point at a small in-memory fake exposing the same functions (`initializeApp`, `getDatabase`, `ref`, `get`, `set`, `update`, `remove`, `onValue`, `onDisconnect`, `getAuth`, `signInAnonymously`). Solo test mode lets one player play through every phase. Check mobile at 375px wide; the mobile styles are in the `@media(max-width:600px)` block at the end of the `<style>`.
 
 ## Making an update
 
