@@ -63,12 +63,21 @@ canvas{display:block;width:100%;height:auto;cursor:crosshair}
 .start{margin-top:24px}.start label{display:block;font-weight:600;margin-bottom:8px}.start .err{margin-top:10px}
 .paths{display:grid;grid-template-columns:1fr auto 1fr;gap:16px;align-items:center;margin-top:16px}.paths>.btn{width:100%}
 .or{color:var(--mut);font-weight:500;text-align:center}.join{display:flex;gap:10px}.join input{flex:1;min-width:0}
-.instr{margin-top:36px;background:var(--tint);border:2px solid var(--red);border-radius:24px;padding:24px}.instr h2{color:var(--acct);margin:0 0 16px}
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
-.step{background:var(--card);border-radius:18px;padding:18px;line-height:1.45;border:1px solid var(--line)}.step b{color:var(--acct)}
+/* Instructions: tilted pastel cards in the round colours, each with an emoji, a number and a white doodle */
+.instr{margin-top:36px}.instr h2{color:var(--acct);margin:0 0 18px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:18px}
+.step{position:relative;overflow:hidden;background:var(--sbg);color:#202020;border-radius:22px;padding:18px 18px 22px;box-shadow:0 6px 0 var(--ssh);transform:rotate(var(--tilt));transition:transform .2s}
+.step:nth-child(odd){--tilt:-1.5deg}.step:nth-child(even){--tilt:1.5deg}.step:hover{transform:rotate(0) translateY(-4px)}
+.step .num{position:absolute;top:14px;right:14px;width:34px;height:34px;border-radius:50%;background:#fff;display:grid;place-items:center;font-weight:700}
+.step .emo{font-size:44px;line-height:1;margin-bottom:12px;display:inline-block}.step:hover .emo{animation:wob .5s}
+@keyframes wob{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
+.step h3,.step p{position:relative;z-index:1}.step h3{margin:0 0 6px;font-size:21px}.step p{margin:0;color:#202020;line-height:1.4;font-size:16px}
+.dood{position:absolute;right:-18px;bottom:-18px;width:100px;height:100px;fill:none;stroke:#fff;stroke-width:4;stroke-linejoin:round;opacity:.75}
+@media (prefers-reduced-motion:reduce){.step,.step:hover{transform:none}.step:hover .emo{animation:none}}
 /* Mobile: full width buttons, palette under the pad with big touch targets, one line leaderboard rows */
 @media(max-width:600px){
-.wrap{padding:0 16px}.card,.instr{padding:16px}.mbox{padding:28px 16px}
+.wrap{padding:0 16px}.card{padding:16px}.mbox{padding:28px 16px}
+.steps{grid-template-columns:1fr;gap:14px}.step:nth-child(n){--tilt:0deg}.step{padding:14px 14px 18px}.step .emo{font-size:36px}.step h3{font-size:18px}.step p{font-size:15px}.step .num{width:28px;height:28px;font-size:15px;top:12px;right:12px}.dood{width:80px;height:80px}
 .btn{width:100%}
 .paths{grid-template-columns:1fr;gap:12px}.or{display:flex;align-items:center;gap:12px}.or:before,.or:after{content:"";flex:1;height:1px;background:var(--line)}.join{flex-direction:column}
 .tools{flex-direction:column;align-items:stretch;gap:24px;margin-top:12px}
@@ -129,6 +138,13 @@ function applyTheme(){
   const h=t[0].slice(1),rgb=[0,2,4].map(k=>parseInt(h.slice(k,k+2),16)).join(",");st.setProperty("--tintD",`rgba(${rgb},.2)`);
 }
 const $=s=>document.querySelector(s),app=$("#app");
+// Instruction cards: title, text, emoji, colour and shadow from the round themes, white doodle
+const STEPS=[
+ ["Swap hands","Draw with your non dominant hand only.","✋","#FFE488","#E0BE4A",'<circle cx="50" cy="26" r="18"/><circle cx="73" cy="43" r="18"/><circle cx="64" cy="71" r="18"/><circle cx="36" cy="71" r="18"/><circle cx="27" cy="43" r="18"/>'],
+ ["Draw fast","Sketch the prompt before the 60 second timer runs out.","✏️","#57D5C3","#2FAF9C",'<path d="M50 6q6 38 44 44q-38 6-44 44q-6-38-44-44q38-6 44-44z"/>'],
+ ["Vote","Pick your favourite sketch each round.","⭐","#B9E5FD","#86C3E6",'<path d="M50 8l12 26 28 3-21 19 6 28-25-14-25 14 6-28-21-19 28-3z"/>'],
+ ["Win","Most votes after 5 rounds wins.","🏆","#FCD5F8","#E3A7DC",'<path d="M50 88C20 66 8 52 8 36a20 20 0 0 1 42-8a20 20 0 0 1 42 8c0 16-12 30-42 52z"/>']
+];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let myPick=null,db,me,code,game=null,players=[],sketches=[],votes=[],unsubs=[],myVotes={},submitted={},tick,clock=0;
 const S={view:"home",err:""};
@@ -252,7 +268,7 @@ function render(){
     <div class="paths"><button class="btn" id="cr">Create a game</button><div class="or">or</div>
     <div class="join"><input id="cd" maxlength="6" placeholder="Game code" aria-label="Game code" value="${esc(S.prefill||"")}" style="text-transform:uppercase"${S.bad==="cd"?' class="bad" aria-invalid="true"':""}><button class="btn ghost" id="jn">Join</button></div></div>
     ${S.err&&S.bad!=="nm"?`<div class="err">${esc(S.err)}</div>`:""}</div>
-    <section class="instr"><h2>Instructions</h2><div class="steps"><div class="step"><b>1.</b> Swap hands. Draw with your non dominant hand only.</div><div class="step"><b>2.</b> Sketch the prompt before the 60 second timer runs out.</div><div class="step"><b>3.</b> Vote for your favourite sketch each round.</div><div class="step"><b>4.</b> Most votes after 5 rounds wins.</div></div></section>`;
+    <section class="instr"><h2>Instructions</h2><div class="steps">${STEPS.map(([t,d,e,bg,sh,dd],i)=>`<div class="step" style="--sbg:${bg};--ssh:${sh}"><span class="num">${i+1}</span><div class="emo" aria-hidden="true">${e}</div><h3>${t}</h3><p>${d}</p><svg class="dood" viewBox="0 0 100 100" aria-hidden="true">${dd}</svg></div>`).join("")}</div></section>`;
     if(S.bad)$("#"+S.bad).focus();
     ["nm","cd"].forEach(id=>$("#"+id).oninput=e=>{if(S.bad===id){S.bad="";e.target.classList.remove("bad");e.target.removeAttribute("aria-invalid")}});
     const nm=()=>{const v=$("#nm").value.trim();S.name=v;S.prefill=$("#cd").value.trim();if(!v){S.err="Enter your name first.";S.bad="nm";render();return null}S.err="";S.bad="";return v};
@@ -348,7 +364,7 @@ async function saveVotes(){
   saving=true;const r=game.round;
   try{do{dirty=false;await db.doc("games/"+code+"/votes/r"+r+"_"+me).set({round:r,voter:me,pick:myPick})}while(dirty)}catch(e){console.warn(e)}finally{saving=false}
 }
-// Logo goes back to the home screen (a normal page load if we never connected)
-$("#hm").onclick=e=>{if(!db)return;e.preventDefault();S.err=S.notice=S.bad="";goHome()};
+// Logo goes back to the home screen (a normal page load if we never connected); mid game it asks to end the game first
+$("#hm").onclick=e=>{if(!db)return;e.preventDefault();if(!$("#eg").hidden)return openEndModal();S.err=S.notice=S.bad="";goHome()};
 init();
 </script></body></html>
