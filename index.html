@@ -118,7 +118,9 @@ function makeDb(){return{
     onSnapshot:cb=>FB.onValue(r,s=>cb(colSnap(s.val())),e=>console.warn(e))}}
 }}
 
-const WORDS=["cat","bicycle","pizza","rocket","giraffe","lighthouse","umbrella","guitar","snowman","octopus","castle","banana","dragon","teapot","cactus","robot","volcano","penguin","hamburger","helicopter","mermaid","tractor","sandcastle","butterfly","skateboard","crown","dinosaur","windmill","ice cream","spider","submarine","palm tree","camera","owl","sunflower","train","ghost","shark","hot air balloon","toothbrush"];
+const WORDS=["cat","bicycle","pizza","rocket","giraffe","lighthouse","umbrella","guitar","snowman","octopus","castle","banana","dragon","teapot","cactus","robot","volcano","penguin","hamburger","helicopter","mermaid","tractor","sandcastle","butterfly","skateboard","crown","dinosaur","windmill","ice cream","spider","submarine","palm tree","camera","owl","sunflower","train","ghost","shark","hot air balloon","toothbrush",
+ // Halloween
+ "pumpkin","witch","bat","skeleton","vampire","zombie","haunted house","cauldron","broomstick","spider web","mummy","candy corn","coffin","werewolf","tombstone","black cat"];
 const INVITE=location.origin+location.pathname,ROUNDS=5,DRAW_MS=60000,VOTE_MS=30000,MAX=10,COLORS=["#2A1416","#E3262E","#FF8A00","#FFC23D","#22A06B","#2D7FF9","#8B5CF6","#8B5A2B","#9AA0A6","#FFFFFF"];
 const AVC=["#FFE488","#57D5C3","#B9E5FD","#FCD5F8","#FFAAAA","#A699FF","#CECECE","#FFF0B8","#A8EADF","#D3CCFF"];
 // Round themes from the palette: bg, shadow, text-on-accent, accent text (light bg), accent text (dark bg), tint light
