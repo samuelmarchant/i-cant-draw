@@ -1,0 +1,25 @@
+name: Clean up old games
+
+# Daily at 03:17 UTC, and on demand from the Actions tab
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save firebase-admin@12
+      - run: node .github/scripts/cleanup-games.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          DATABASE_URL: https://i-cant-draw-41bf8-default-rtdb.europe-west1.firebasedatabase.app
+          MAX_AGE_HOURS: "24"
