@@ -344,7 +344,7 @@ function render(){
     <div class="players">${players.map(p=>`<div class="pl">${av(p)}<div>${esc(p.name)}${p.id===game.host?' <span class="muted">👑</span>':""}${p.id===me?' <span class="muted">(you)</span>':""}</div></div>`).join("")}</div>
     ${isHost()?`<button class="btn" id="st">Start game</button>`:`<p>Waiting for the host to start…</p>`}`;
     $("#cp").onclick=async()=>{const i=$("#il");try{await navigator.clipboard.writeText(i.value)}catch(e){i.select();try{document.execCommand("copy")}catch(_){}}$("#cp").textContent="Copied!";setTimeout(()=>{const b=$("#cp");if(b)b.textContent="Copy invite link"},1800)};
-    if(isHost())$("#st").onclick=startGame;return;
+    if(isHost())$("#st").onclick=()=>startGame();return;
   }
   if(ph==="drawing"){
     const key=code+game.round;
