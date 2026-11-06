@@ -205,11 +205,11 @@ function subscribe(){
     if(game){game.round=+game.round||0;game.lastAdd=Object.fromEntries(Object.entries(game.lastAdd||{}).map(([k,v])=>[k,+v||0]))}
     if(prev&&!game){S.err="";S.notice="That game has finished.";goHome();return}
     if(game&&game.phase==="ended"){const by=game.endedBy;S.err="";S.notice=by===me?"You ended the game.":`${pname(by)} ended the game.`;goHome();return}
-    if(prev&&game&&prev.phase==="final"&&game.phase!=="final"){submitted={};myPick=null;myRx={}}
+    if(prev&&game&&prev.phase==="final"&&game.phase!=="final"){submitted={};myImg={};myPick=null;myRx={}}
     if(prev&&game&&(prev.phase!==game.phase||prev.round!==game.round)){if(game.phase==="voting"){myPick=null;myRx={}}}
     render()}));
   unsubs.push(db.collection("games/"+code+"/players").onSnapshot(q=>{players=q.docs.map(d=>({id:d.id,...d.data(),score:+d.data().score||0})).sort((a,b)=>a.joinedAt-b.joinedAt);render()}));
-  unsubs.push(db.collection("games/"+code+"/sketches").onSnapshot(q=>{sketches=q.docs.map(d=>({id:d.id,...d.data()})).filter(s=>/^[\w-]+$/.test(s.pid)&&/^data:image\/jpeg;base64,[\w+/=]+$/.test(s.img));if(game?.phase==="voting")render();else hostDrive()}));
+  unsubs.push(db.collection("games/"+code+"/sketches").onSnapshot(q=>{sketches=q.docs.map(d=>({id:d.id,...d.data()})).filter(s=>/^[\w-]+$/.test(s.pid)&&/^data:image\/jpeg;base64,[\w+/=]+$/.test(s.img));if(game?.phase==="voting"||(game?.phase==="drawing"&&submitted[game.round]))render();hostDrive()}));
   joinRoom();
   unsubs.push(db.collection("games/"+code+"/votes").onSnapshot(q=>{votes=q.docs.map(d=>({id:d.id,...d.data()}));if(game?.phase==="voting")render();hostDrive()}));
   unsubs.push(db.collection("games/"+code+"/reactions").onSnapshot(q=>{reacts=q.docs.map(d=>d.data()).filter(r=>r&&/^[\w-]+$/.test(r.voter)&&r.r&&typeof r.r==="object").map(r=>({...r,round:+r.round||0}));
@@ -350,6 +350,15 @@ function render(){
     $("#cp").onclick=async()=>{const i=$("#il");try{await navigator.clipboard.writeText(i.value)}catch(e){i.select();try{document.execCommand("copy")}catch(_){}}$("#cp").textContent="Copied!";setTimeout(()=>{const b=$("#cp");if(b)b.textContent="Copy invite link"},1800)};
     if(isHost())$("#st").onclick=()=>startGame();return;
   }
+  if(ph==="drawing"&&submitted[game.round]){
+    // Sketch sent: wait here (timer still running) until everyone else finishes
+    const r=game.round,mine=myImg[r]||sketches.find(s=>s.round===r&&s.pid===me)?.img,act=activePlayers(),left=act.filter(p=>!sketches.some(s=>s.round===r&&s.pid===p.id));
+    app.innerHTML=`<div class="hud"><div><span class="pill">Round ${r} of ${ROUNDS}</span><div class="word">${esc(game.word)}</div></div>${timerHTML()}</div>
+    <div class="hint" style="background:#DDF5E9;color:#0F5C3B">✅ Sketch sent! Waiting for everyone else to finish…</div>
+    ${mine?`<div class="sk" style="max-width:420px;margin:0 auto"><img src="${mine}" alt="Your sketch"></div>`:""}
+    <p class="center" style="margin:18px 0 0"><b>${act.length-left.length}/${act.length}</b> players finished</p>${left.length?`<p class="center muted" style="margin:6px 0 0">Still sketching: ${left.map(p=>esc(p.name)).join(", ")}</p>`:""}`;
+    timerUpdate();return;
+  }
   if(ph==="drawing"){
     const key=code+game.round;
     if(drawnKey===key&&$("#cv")){updateDrawStatus();return}
@@ -363,13 +372,13 @@ function render(){
     <button class="btn tert" id="dn" style="padding:8px 22px">Done</button></div></div><p id="ds" class="muted" style="margin-top:10px"></p>`;
     setupCanvas();updateDrawStatus();timerUpdate();return;
   }
-  drawnKey="";
+  drawnKey="";strokesKey="";
   if(ph==="voting"){
     const list=sketches.filter(s=>s.round===game.round);
     const act=activePlayers(),done=act.filter(p=>hasVoted(p.id)),self=canSelfVote(),over=NOW()>=game.endsAt;
     const waiting=act.filter(p=>!hasVoted(p.id)).map(p=>esc(p.name)).join(", ");
     const W=game.word.replace(/\b\w/g,c=>c.toUpperCase());
-    app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} · Voting</span><h2 style="margin-top:14px">Vote for your favourite '${esc(W)}' sketch</h2><p style="margin:0">Pick one. You can change your pick until the timer ends.</p></div>${timerHTML()}</div>
+    app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} · Voting</span><h2 style="margin-top:14px">Pick your favourite '${esc(W)}' sketch</h2><p style="margin:0">Make changes until the timer ends</p></div>${timerHTML()}</div>
     <div class="hint" style="${over?"":"background:#DDF5E9;color:#0F5C3B"}">${over&&waiting?`Time's up! Counting the votes…`:`${done.length}/${act.length} players have picked a favourite`}</div>
     <div class="grid">${list.map(s=>{const own=s.pid===me&&!self;return own?`<div class="sk own"><img src="${s.img}" alt="your sketch"><div class="row" style="margin-top:14px">${av({id:s.pid,name:pname(s.pid)})}<b>${esc(pname(s.pid))}</b><span class="muted">(you)</span></div>${rxBar(s)}<p class="center" style="margin:14px 0 0">You can't vote for your own sketch</p></div>`:`<div class="sk pick${myPick===s.pid?" sel":""}" data-p="${s.pid}" role="button" tabindex="0">${myPick===s.pid?`<span class="badge">✓ Your favourite</span>`:""}<img src="${s.img}" alt="sketch"><div class="row" style="margin-top:14px">${av({id:s.pid,name:pname(s.pid)})}<b>${esc(pname(s.pid))}</b>${s.pid===me?'<span class="muted">(you)</span>':""}</div>${rxBar(s)}
       <button class="btn ${myPick===s.pid?"tert":"lite"}" style="width:100%;margin-top:14px">${myPick===s.pid?"Selected":"My favourite"}</button></div>`}).join("")||"<p>No sketches came in this round.</p>"}</div>`;
@@ -388,7 +397,7 @@ function render(){
     const vp=n=>`⭐ ${n}<span class="vw"> ${n===1?"vote":"votes"}</span>`,rk=p=>1+ranked.filter(q=>q.score>p.score).length,top=ranked[0]?.score||0,crown=p=>p.score===top?"👑 ":"",vt=n=>`${n} ${n===1?"vote":"votes"}`;
     if(fin){
       const M=["🥇","🥈","🥉"],cls=["first","second","third"];
-      const win=ranked.filter(p=>p.score===top),names=win.map(p=>esc(p.name)),list=names.length>1?names.slice(0,-1).join(", ")+" and "+names.at(-1):names[0];
+      const win=ranked.filter(p=>p.score===top),names=win.map(p=>esc(p.name)),list=names.length>1?names.slice(0,-1).join(", ")+" and "+names[names.length-1]:names[0];
       app.innerHTML=`<div class="trophy">🏆</div><h1 class="center">${win.length>1?"It's a tie!":`${list} wins!`}</h1><p class="center">${win.length>1?`${list} tied on ${vt(top)} after ${ROUNDS} rounds`:`${vt(top)} after ${ROUNDS} rounds`}</p>
       <div class="pod">${ranked.slice(0,3).map(p=>`<div class="pl ${cls[rk(p)-1]}" style="justify-content:space-between"><div class="row"><span class="medal">${M[rk(p)-1]}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">${vp(p.score)}</span></div>`).join("")}</div>
       ${ranked.length>3?`<div class="sub">Everyone else</div><div class="board" style="display:grid;gap:12px;margin-top:14px">${ranked.slice(3).map(p=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">${vp(p.score)}</span></div>`).join("")}</div>`:""}
@@ -409,9 +418,9 @@ function render(){
 function updateDrawStatus(){const d=$("#ds");if(!d)return;const n=sketches.filter(s=>s.round===game.round).length,tot=activePlayers().length;
   d.textContent=submitted[game.round]?`Sketch sent! ${n}/${tot} finished`:`${n}/${tot} players finished`;
   if(submitted[game.round]){$("#dn").disabled=true;$("#cv").style.pointerEvents="none"}}
-let ctx,cv,strokes=[],cur=null,pen={c:"#2A1416",s:matchMedia("(max-width:600px)").matches?4:10};
+let ctx,cv,strokes=[],strokesKey="",myImg={},cur=null,pen={c:"#2A1416",s:matchMedia("(max-width:600px)").matches?4:10};
 function setupCanvas(){
-  cv=$("#cv");ctx=cv.getContext("2d");strokes=[];cur=null;redraw();
+  cv=$("#cv");ctx=cv.getContext("2d");if(strokesKey!==drawnKey){strokes=[];strokesKey=drawnKey}cur=null;redraw();
   const pos=e=>{const r=cv.getBoundingClientRect();return[(e.clientX-r.left)*cv.width/r.width,(e.clientY-r.top)*cv.height/r.height]};
   cv.onpointerdown=e=>{if(submitted[game.round])return;cv.setPointerCapture(e.pointerId);cur={c:pen.c,s:pen.s,p:[pos(e)]};strokes.push(cur);redraw()};
   cv.onpointermove=e=>{if(!cur)return;cur.p.push(pos(e));redraw()};
@@ -426,8 +435,8 @@ function redraw(){ctx.fillStyle="#fff";ctx.fillRect(0,0,cv.width,cv.height);ctx.
 async function submitSketch(){
   if(!game||game.phase!=="drawing"||submitted[game.round]||!cv)return;const r=game.round;submitted[r]=true;
   const t=document.createElement("canvas");t.width=480;t.height=360;const tc=t.getContext("2d");tc.drawImage(cv,0,0,480,360);
-  const img=t.toDataURL("image/jpeg",0.7);updateDrawStatus();
-  try{await db.doc("games/"+code+"/sketches/r"+r+"_"+me).set({round:r,pid:me,img})}catch(e){submitted[r]=false;console.warn(e)}
+  const img=t.toDataURL("image/jpeg",0.7);myImg[r]=img;render();
+  try{await db.doc("games/"+code+"/sketches/r"+r+"_"+me).set({round:r,pid:me,img})}catch(e){submitted[r]=false;console.warn(e);render()}
 }
 let saving=false,dirty=false;
 async function saveVotes(){
