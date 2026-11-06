@@ -54,8 +54,12 @@ canvas{display:block;width:100%;height:auto;cursor:crosshair}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:24px}
 .sk{background:var(--card);border-radius:20px;padding:14px;border:3px solid var(--line);position:relative;transition:border-color .15s,box-shadow .15s}.sk.sel{border-color:#4CC38A;border-width:5px;background:#E3F8EC;box-shadow:0 0 0 6px rgba(76,195,138,.25),0 14px 28px rgba(34,160,107,.22);transform:translateY(-4px)}.sk.sel img{outline:3px solid #4CC38A}.sk.sel .btn{background:#434343;color:#F5F3EF;box-shadow:0 5px 0 #262626}.sk .badge{position:absolute;top:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#4CC38A;color:#fff;border-radius:999px;padding:8px 16px;font-weight:700;font-size:20px;box-shadow:0 4px 0 #2E9A68;border:3px solid #fff}.sk.pick{cursor:pointer}.sk.pick:hover:not(.sel){border-color:#A8E6C7}.star{transition:transform .1s}.star.on{transform:scale(1.15);box-shadow:0 3px 0 #C99400}
 .rxs{display:flex;gap:8px;margin-top:12px}.rx{font:inherit;font-size:18px;min-height:40px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}.rx span{font-size:15px;font-weight:600}.rx.on{border-color:var(--acct);background:var(--tint)}
+.confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
 a.btn{display:inline-block;text-decoration:none;text-align:center}
-.gal{margin-top:40px}.gal h2{color:var(--acct)}.gal h3{margin:24px 0 12px;font-size:21px}
+.gal{margin-top:40px}.gal h2{color:var(--acct)}.galhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 12px}.galhead h3{margin:0;font-size:21px}
+.arrows{display:flex;gap:8px}.arrows[hidden]{display:none}.arw{width:40px;height:40px;flex:none;border-radius:50%;border:2px solid var(--line);background:var(--card);color:var(--ink);display:grid;place-items:center;cursor:pointer;padding:0}.arw:hover:not(:disabled){border-color:var(--acct)}.arw:disabled{opacity:.35;cursor:default}
+.btn.save{width:100%;margin-top:12px;font-size:15px;padding:8px 12px;border-radius:12px;box-shadow:0 3px 0 #CECECE}.btn.save:active{box-shadow:0 1px 0 #CECECE}
+.gal .grid{display:flex;gap:16px;overflow-x:auto;scroll-snap-type:x mandatory;padding:4px 4px 14px;margin:0 -4px}.gal .sk{flex:0 0 260px;scroll-snap-align:start}
 .sk img{width:100%;border-radius:12px;background:#fff;display:block;aspect-ratio:4/3;object-fit:contain;outline:2px solid var(--line)}
 .stars{display:flex;gap:8px;margin-top:14px;justify-content:center}
 .star{font:inherit;width:36px;height:36px;border-radius:10px;border:2px solid var(--line);background:var(--card);color:var(--ink);font-weight:700;cursor:pointer}
@@ -90,7 +94,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .szs{margin-left:0;justify-content:center;gap:16px}.sz{width:48px;height:48px}
 .acts{flex-direction:column;align-items:stretch;gap:16px}.acts .btn{padding:12px 16px!important}
 #ds{text-align:center}
-.board .av,.pod .av{display:none}
+.board .av,.pod .av{display:none}.gal .sk{flex-basis:80%}
 .pod .pl{gap:8px;min-width:0}.pod .first{padding:18px 16px;font-size:22px}.pod .second{font-size:20px}.pod .third{font-size:19px}
 .pod .row{flex-wrap:nowrap;gap:8px;min-width:0;flex:1}.pod b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pod .muted,.pod .pill{white-space:nowrap}.pod .pill{font-size:15px;padding:4px 10px}
 .board .pl{gap:8px;padding:12px;min-width:0}.board .row{flex-wrap:nowrap;gap:8px;min-width:0}.board .pl>.row:first-child{flex:1}
@@ -198,6 +202,7 @@ function subscribe(){
     if(game){game.round=+game.round||0;game.lastAdd=Object.fromEntries(Object.entries(game.lastAdd||{}).map(([k,v])=>[k,+v||0]))}
     if(prev&&!game){S.err="";S.notice="That game has finished.";goHome();return}
     if(game&&game.phase==="ended"){const by=game.endedBy;S.err="";S.notice=by===me?"You ended the game.":`${pname(by)} ended the game.`;goHome();return}
+    if(prev&&game&&prev.phase==="final"&&game.phase!=="final"){submitted={};myPick=null;myRx={}}
     if(prev&&game&&(prev.phase!==game.phase||prev.round!==game.round)){if(game.phase==="voting"){myPick=null;myRx={}}}
     render()}));
   unsubs.push(db.collection("games/"+code+"/players").onSnapshot(q=>{players=q.docs.map(d=>({id:d.id,...d.data(),score:+d.data().score||0})).sort((a,b)=>a.joinedAt-b.joinedAt);render()}));
@@ -246,9 +251,16 @@ async function hostDrive(){
     }
   }catch(e){console.warn(e)}finally{driving=false}
 }
-async function startGame(){
-  const w=[...WORDS].sort(()=>Math.random()-.5).slice(0,ROUNDS);
-  for(const p of players)if(p.score)await db.doc("games/"+code+"/players/"+p.id).update({score:0});
+// Host only: same players, scores reset, last game's sketches, votes and reactions cleared, none of its words reused.
+// Players who already left the final screen are dropped so they don't sit on the new leaderboard.
+async function restartGame(){
+  const used=Array.isArray(game.words)?game.words:[],gone=players.filter(p=>!isActive(p.id)).map(p=>p.id);
+  await Promise.all(["sketches","votes","reactions",...gone.map(id=>"players/"+id)].map(k=>FB.remove(FB.ref(rtdb,"games/"+code+"/"+k))));
+  await startGame(used,gone);
+}
+async function startGame(avoid=[],gone=[]){
+  const pool=WORDS.filter(x=>!avoid.includes(x)),w=(pool.length>=ROUNDS?pool:WORDS).slice().sort(()=>Math.random()-.5).slice(0,ROUNDS);
+  for(const p of players)if(p.score&&!gone.includes(p.id))await db.doc("games/"+code+"/players/"+p.id).update({score:0});
   await gref().update({phase:"drawing",round:1,words:w,word:w[0],endsAt:NOW()+DRAW_MS,lastAdd:{}});
 }
 function timerUpdate(){
@@ -271,17 +283,35 @@ function openEndModal(){const m=$("#md");m.hidden=false;$("#mdn").focus();
 // How many players gave sketch pid reaction i in round r (my current-round reactions come from local state so taps show instantly)
 function rxN(pid,i,r){const on=x=>typeof x==="string"&&x[i]==="1";return reacts.filter(x=>x.round===r&&!(r===game?.round&&x.voter===me)&&on(x.r[pid])).length+(r===game?.round&&on(myRx[pid])?1:0)}
 const rxBar=s=>`<div class="rxs">${RX.map((e,i)=>{const n=rxN(s.pid,i,game.round),on=(myRx[s.pid]||"000")[i]==="1";return`<button class="rx${on?" on":""}" data-p="${s.pid}" data-i="${i}" aria-pressed="${on}" aria-label="React ${e}">${e}${n?`<span>${n}</span>`:""}</button>`}).join("")}</div>`;
+// Confetti over the final results: about 4 seconds of falling paper in the game colours, once per finished game
+let confettiFor="";
+function confetti(){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches)return;
+  const c=document.createElement("canvas"),x=c.getContext("2d"),W=c.width=innerWidth,H=c.height=innerHeight,C=["#A699FF","#FFE488","#57D5C3","#B9E5FD","#FCD5F8","#FFAAAA","#4CC38A"];
+  c.className="confetti";c.setAttribute("aria-hidden","true");document.body.appendChild(c);
+  const P=Array.from({length:160},()=>({x:Math.random()*W,y:-Math.random()*H,w:6+Math.random()*6,h:10+Math.random()*8,vy:2+Math.random()*3,vx:Math.random()*2-1,r:Math.random()*6,vr:Math.random()*.2-.1,c:C[Math.random()*C.length|0]}));
+  const t0=performance.now();
+  const step=t=>{const e=t-t0;x.clearRect(0,0,W,H);x.globalAlpha=e<4000?1:Math.max(0,1-(e-4000)/1000);
+    for(const p of P){p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;if(p.y>H&&e<3000){p.y=-20;p.x=Math.random()*W}x.save();x.translate(p.x,p.y);x.rotate(p.r);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore()}
+    if(e<5000)requestAnimationFrame(step);else c.remove()};
+  requestAnimationFrame(step);
+}
 // End of game gallery: every sketch by round with its votes, reactions and a download link
 const slug=s=>String(s??"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"sketch";
 const cap=w=>String(w??"").replace(/\b\w/g,c=>c.toUpperCase());
+// Gallery arrows: disabled at either end, hidden when a round's cards all fit
+function galArrows(g){const a=g.previousElementSibling.querySelector(".arrows"),[l,r]=a.querySelectorAll(".arw");a.hidden=g.scrollWidth<=g.clientWidth+2;l.disabled=g.scrollLeft<=8;r.disabled=g.scrollLeft+g.clientWidth>=g.scrollWidth-8}
+// Move a gallery row to the next (d=1) or previous (d=-1) card; jumps instantly if smooth scrolling doesn't start
+function galStep(g,d){const x=g.getBoundingClientRect().left,cs=[...g.children],c=d>0?cs.find(c=>c.getBoundingClientRect().left>x+10):cs.reverse().find(c=>c.getBoundingClientRect().left<x-10);
+  if(!c)return;const to=g.scrollLeft+c.getBoundingClientRect().left-x-4,from=g.scrollLeft;g.scrollTo({left:to,behavior:"smooth"});setTimeout(()=>{if(g.scrollLeft===from)g.scrollLeft=to;galArrows(g)},400)}
 function galleryHTML(){
   const words=Array.isArray(game.words)?game.words:[];
   const rounds=Array.from({length:ROUNDS},(_,i)=>i+1).filter(r=>sketches.some(s=>s.round===r));
   if(!rounds.length)return"";
-  return`<section class="gal"><h2>Sketch gallery</h2>${rounds.map(r=>{const w=words[r-1]||"";return`<h3>Round ${r}${w?` · ${esc(cap(w))}`:""}</h3><div class="grid">${sketches.filter(s=>s.round===r).map(s=>{
+  return`<section class="gal"><h2>Sketch gallery</h2>${rounds.map(r=>{const w=words[r-1]||"";return`<div class="galhead"><h3>Round ${r}${w?` · ${esc(cap(w))}`:""}</h3><div class="arrows">${[-1,1].map(d=>`<button class="arw" data-d="${d}" aria-label="${d<0?"Previous":"Next"} sketches"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${d<0?"M15 6l-6 6 6 6":"M9 6l6 6-6 6"}"/></svg></button>`).join("")}</div></div><div class="grid">${sketches.filter(s=>s.round===r).map(s=>{
     const n=pname(s.pid),v=votes.filter(x=>+x.round===r&&x.pick===s.pid&&x.voter!==s.pid).length,rx=RX.map((e,i)=>{const c=rxN(s.pid,i,r);return c?`${e} ${c}`:""}).filter(Boolean).join("  ");
-    return`<div class="sk"><img src="${s.img}" alt="${esc(n)}'s sketch${w?` of ${esc(w)}`:""}"><div class="row" style="margin-top:14px">${av({id:s.pid,name:n})}<b>${esc(n)}</b>${s.pid===me?'<span class="muted">(you)</span>':""}${v?`<span class="pill" style="margin-left:auto">⭐ ${v}</span>`:""}</div>
-    ${rx?`<p class="muted" style="margin:10px 0 0">${rx}</p>`:""}<a class="btn lite" style="width:100%;margin-top:14px" href="${s.img}" download="i-cant-draw-round-${r}-${slug(w)}-${slug(n)}.jpg">Save image</a></div>`}).join("")}</div>`}).join("")}</section>`;
+    return`<div class="sk"><img src="${s.img}" alt="${esc(n)}'s sketch${w?` of ${esc(w)}`:""}"><div class="row" style="margin-top:14px"><b>${esc(n)}</b>${s.pid===me?'<span class="muted">(you)</span>':""}${v?`<span class="pill" style="margin-left:auto">⭐ ${v}</span>`:""}</div>
+    ${rx?`<p class="muted" style="margin:10px 0 0">${rx}</p>`:""}<a class="btn lite save" href="${s.img}" download="i-cant-draw-round-${r}-${slug(w)}-${slug(n)}.jpg">Save image</a></div>`}).join("")}</div>`}).join("")}</section>`;
 }
 function goHome(){$("#md").hidden=true;unsubs.forEach(u=>u());unsubs=[];code=null;game=null;players=[];sketches=[];votes=[];myPick=null;reacts=[];myRx={};drawnKey="";history.replaceState(null,"",location.pathname+location.search);render()}
 function render(){
@@ -347,6 +377,7 @@ function render(){
   if(ph==="results"||ph==="final"){
     const ranked=[...players].sort((a,b)=>(b.score||0)-(a.score||0)),add=game.lastAdd||{};
     const fin=ph==="final";
+    const keep=[...app.querySelectorAll(".gal .grid")].map(g=>g.scrollLeft);// redraws happen as players leave; keep gallery rows where they were
     const you=p=>p.id===me?' <span class="muted">(you)</span>':"";
     // Tied scores share a rank (1, 1, 3) and everyone on the top score gets a crown
     const rk=p=>1+ranked.filter(q=>q.score>p.score).length,top=ranked[0]?.score||0,crown=p=>p.score===top?"👑 ":"",vt=n=>`${n} ${n===1?"vote":"votes"}`;
@@ -354,10 +385,10 @@ function render(){
       const M=["🥇","🥈","🥉"],cls=["first","second","third"];
       const win=ranked.filter(p=>p.score===top),names=win.map(p=>esc(p.name)),list=names.length>1?names.slice(0,-1).join(", ")+" and "+names.at(-1):names[0];
       app.innerHTML=`<div class="trophy">🏆</div><h1 class="center">${win.length>1?"It's a tie!":`${list} wins!`}</h1><p class="center">${win.length>1?`${list} tied on ${vt(top)} after ${ROUNDS} rounds`:`${vt(top)} after ${ROUNDS} rounds`}</p>
-      <div class="pod">${ranked.slice(0,3).map(p=>`<div class="pl ${cls[rk(p)-1]}" style="justify-content:space-between"><div class="row"><span class="medal">${M[rk(p)-1]}</span>${av(p)}<b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>
-      ${ranked.length>3?`<div class="sub">Everyone else</div><div class="board" style="display:grid;gap:12px;margin-top:14px">${ranked.slice(3).map(p=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span>${av(p)}<b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>`:""}
+      <div class="pod">${ranked.slice(0,3).map(p=>`<div class="pl ${cls[rk(p)-1]}" style="justify-content:space-between"><div class="row"><span class="medal">${M[rk(p)-1]}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>
+      ${ranked.length>3?`<div class="sub">Everyone else</div><div class="board" style="display:grid;gap:12px;margin-top:14px">${ranked.slice(3).map(p=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>`:""}
       ${galleryHTML()}
-      <div class="row" style="margin-top:32px;justify-content:center"><button class="btn ghost" id="lv">Back to the start</button></div>`;
+      <div class="row" style="margin-top:32px;justify-content:center">${isHost()?`<button class="btn tert" id="rs">Restart game</button>`:""}<button class="btn ghost" id="lv">Back to the start</button></div>`;
     }else{
       app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} results</span><h2 style="margin-top:14px">Leaderboard</h2><p style="margin:0">${game.round<ROUNDS?"Next round starts soon...":"Final scores when the timer ends"}</p></div>${timerHTML()}</div>
       <div class="board" style="display:grid;gap:12px">${ranked.map((p,i)=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span>${av(p)}<b>${esc(p.name)}</b>${you(p)}</div><div class="row">${add[p.id]?`<span class="pill" style="color:var(--ok)">+${add[p.id]}</span>`:""}<span class="pill">⭐ ${p.score||0} ${(p.score||0)===1?"vote":"votes"}</span></div></div>`).join("")}</div>
@@ -365,7 +396,9 @@ function render(){
       if(isHost())$("#nx").onclick=async()=>{$("#nx").disabled=true;try{await gref().update({endsAt:NOW()})}catch(e){$("#nx").disabled=false}};
       timerUpdate();
     }
-    if(fin)$("#lv").onclick=goHome;
+    if(fin){app.querySelectorAll(".gal .grid").forEach((g,i)=>{g.scrollLeft=keep[i]||0;galArrows(g);g.onscroll=()=>galArrows(g)});
+      app.querySelectorAll(".arw").forEach(b=>b.onclick=()=>galStep(b.closest(".galhead").nextElementSibling,+b.dataset.d));const ck=code+":"+(Array.isArray(game.words)?game.words.join():"");if(confettiFor!==ck){confettiFor=ck;confetti()}
+      $("#lv").onclick=goHome;if(isHost())$("#rs").onclick=async()=>{const b=$("#rs");b.disabled=true;b.textContent="Restarting…";try{await restartGame()}catch(e){console.warn(e);b.disabled=false;b.textContent="Restart game"}}}
   }
 }
 function updateDrawStatus(){const d=$("#ds");if(!d)return;const n=sketches.filter(s=>s.round===game.round).length,tot=activePlayers().length;
