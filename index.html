@@ -53,7 +53,10 @@ canvas{display:block;width:100%;height:auto;cursor:crosshair}
 .hint{background:var(--tint);color:var(--ink);border-radius:14px;padding:14px 18px;font-weight:500;margin-bottom:24px;text-align:center}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:24px}
 .sk{background:var(--card);border-radius:20px;padding:14px;border:3px solid var(--line);position:relative;transition:border-color .15s,box-shadow .15s}.sk.sel{border-color:#4CC38A;border-width:5px;background:#E3F8EC;box-shadow:0 0 0 6px rgba(76,195,138,.25),0 14px 28px rgba(34,160,107,.22);transform:translateY(-4px)}.sk.sel img{outline:3px solid #4CC38A}.sk.sel .btn{background:#434343;color:#F5F3EF;box-shadow:0 5px 0 #262626}.sk .badge{position:absolute;top:-16px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#4CC38A;color:#fff;border-radius:999px;padding:8px 16px;font-weight:700;font-size:20px;box-shadow:0 4px 0 #2E9A68;border:3px solid #fff}.sk.pick{cursor:pointer}.sk.pick:hover:not(.sel){border-color:#A8E6C7}.star{transition:transform .1s}.star.on{transform:scale(1.15);box-shadow:0 3px 0 #C99400}
-.rxs{display:flex;gap:8px;margin-top:12px}.rx{font:inherit;font-size:18px;min-height:40px;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}.rx span{font-size:15px;font-weight:600}.rx.on{border-color:var(--acct);background:var(--tint)}
+.rxs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.rx{position:relative;font:inherit;font-size:18px;min-height:40px;display:flex;justify-content:center;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}.rx span{font-size:15px;font-weight:600}.rx.on{border-color:var(--acct);background:var(--tint)}.rx .n:empty{display:none}
+.rx.pop{animation:rxpop .35s ease-out}@keyframes rxpop{40%{transform:scale(1.18)}}
+.rx .fly{position:absolute;left:50%;top:0;font-size:22px;pointer-events:none;animation:rxfly .7s ease-out forwards}@keyframes rxfly{from{transform:translate(-50%,0) scale(1);opacity:1}to{transform:translate(-50%,-52px) scale(1.7);opacity:0}}
+@media (prefers-reduced-motion:reduce){.rx.pop,.rx .fly{animation:none}.rx .fly{display:none}}
 .confetti{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:40}
 a.btn{display:inline-block;text-decoration:none;text-align:center}
 .gal{margin-top:40px}.gal h2{color:var(--acct)}.galhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 12px}.galhead h3{margin:0;font-size:21px}
@@ -79,7 +82,7 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 .step .emo{font-size:44px;line-height:1;margin-bottom:12px;display:inline-block}.step:hover .emo{animation:wob .5s}
 @keyframes wob{25%{transform:rotate(-12deg)}75%{transform:rotate(12deg)}}
 .step h3,.step p{position:relative;z-index:1}.step h3{margin:0 0 6px;font-size:21px}.step p{margin:0;color:#202020;line-height:1.4;font-size:16px}
-.dood{position:absolute;right:-18px;bottom:-18px;width:100px;height:100px;fill:none;stroke:#fff;stroke-width:4;stroke-linejoin:round;opacity:.75}
+.dood{position:absolute;right:-18px;bottom:-18px;width:100px;height:100px;fill:none;stroke:#fff;stroke-width:4;stroke-linejoin:round;opacity:.4}
 @media (prefers-reduced-motion:reduce){.step,.step:hover{transform:none}.step:hover .emo{animation:none}}
 /* Mobile: full width buttons, palette under the pad with big touch targets, one line leaderboard rows */
 @media(max-width:600px){
@@ -96,9 +99,9 @@ a.btn{display:inline-block;text-decoration:none;text-align:center}
 #ds{text-align:center}
 .board .av,.pod .av{display:none}.gal .sk{flex-basis:80%}
 .pod .pl{gap:8px;min-width:0}.pod .first{padding:18px 16px;font-size:22px}.pod .second{font-size:20px}.pod .third{font-size:19px}
-.pod .row{flex-wrap:nowrap;gap:8px;min-width:0;flex:1}.pod b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pod .muted,.pod .pill{white-space:nowrap}.pod .pill{font-size:15px;padding:4px 10px}
+.pod .row{flex-wrap:nowrap;gap:8px;min-width:0;flex:1}.pod b{min-width:0;overflow-wrap:anywhere;line-height:1.2}.pod .muted,.pod .pill{white-space:nowrap}.pod .pill{font-size:15px;padding:4px 10px}
 .board .pl{gap:8px;padding:12px;min-width:0}.board .row{flex-wrap:nowrap;gap:8px;min-width:0}.board .pl>.row:first-child{flex:1}
-.board b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.board .muted,.board .pill{white-space:nowrap}.board .pill{font-size:15px;padding:4px 10px}.board .av{width:32px;height:32px}.board .rank{width:20px}
+.board b{min-width:0;overflow-wrap:anywhere;line-height:1.2}.board .vw,.pod .vw{display:none}.board .muted,.board .pill{white-space:nowrap}.board .pill{font-size:15px;padding:4px 10px}.board .av{width:32px;height:32px}.board .rank{width:20px}
 }
 </style></head><body>
 <div class="top"><div class="brand"><a class="home" id="hm" href="./" aria-label="I can't draw, home"><div class="logo">✍️</div><span>I can't draw</span></a><button class="endbtn" id="eg" hidden>End game</button></div></div>
@@ -149,10 +152,10 @@ function applyTheme(){
 const $=s=>document.querySelector(s),app=$("#app");
 // Instruction cards: title, text, emoji, colour and shadow from the round themes, white doodle
 const STEPS=[
- ["Swap hands","Draw with your non dominant hand only.","✋","#FFE488","#E0BE4A",'<circle cx="50" cy="26" r="18"/><circle cx="73" cy="43" r="18"/><circle cx="64" cy="71" r="18"/><circle cx="36" cy="71" r="18"/><circle cx="27" cy="43" r="18"/>'],
- ["Draw fast","Sketch the prompt before the 60 second timer runs out.","✏️","#57D5C3","#2FAF9C",'<path d="M50 6q6 38 44 44q-38 6-44 44q-6-38-44-44q38-6 44-44z"/>'],
- ["Vote","Pick your favourite sketch each round.","⭐","#B9E5FD","#86C3E6",'<path d="M50 8l12 26 28 3-21 19 6 28-25-14-25 14 6-28-21-19 28-3z"/>'],
- ["Win","Most votes after 5 rounds wins.","🏆","#FCD5F8","#E3A7DC",'<path d="M50 88C20 66 8 52 8 36a20 20 0 0 1 42-8a20 20 0 0 1 42 8c0 16-12 30-42 52z"/>']
+ ["Swap hands","Draw with your non dominant hand only","✋","#FFE488","#E0BE4A",'<circle cx="50" cy="26" r="18"/><circle cx="73" cy="43" r="18"/><circle cx="64" cy="71" r="18"/><circle cx="36" cy="71" r="18"/><circle cx="27" cy="43" r="18"/>'],
+ ["Draw fast","Sketch the prompt before the 60 second timer runs out","✏️","#57D5C3","#2FAF9C",'<path d="M50 6q6 38 44 44q-38 6-44 44q-6-38-44-44q38-6 44-44z"/>'],
+ ["Vote","Pick your favourite sketch each round","⭐","#B9E5FD","#86C3E6",'<path d="M50 8l12 26 28 3-21 19 6 28-25-14-25 14 6-28-21-19 28-3z"/>'],
+ ["Win","Most votes after 5 rounds wins","🏆","#FCD5F8","#E3A7DC",'<path d="M50 88C20 66 8 52 8 36a20 20 0 0 1 42-8a20 20 0 0 1 42 8c0 16-12 30-42 52z"/>']
 ];
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let myPick=null,db,me,code,game=null,players=[],sketches=[],votes=[],reacts=[],myRx={},unsubs=[],myVotes={},submitted={},tick,clock=0;
@@ -210,7 +213,7 @@ function subscribe(){
   joinRoom();
   unsubs.push(db.collection("games/"+code+"/votes").onSnapshot(q=>{votes=q.docs.map(d=>({id:d.id,...d.data()}));if(game?.phase==="voting")render();hostDrive()}));
   unsubs.push(db.collection("games/"+code+"/reactions").onSnapshot(q=>{reacts=q.docs.map(d=>d.data()).filter(r=>r&&/^[\w-]+$/.test(r.voter)&&r.r&&typeof r.r==="object").map(r=>({...r,round:+r.round||0}));
-    const mine=reacts.find(r=>r.voter===me&&r.round===game?.round);if(mine&&!Object.keys(myRx).length)myRx={...mine.r};if(game?.phase==="voting")render()}));
+    const mine=reacts.find(r=>r.voter===me&&r.round===game?.round);if(mine&&!Object.keys(myRx).length)myRx={...mine.r};if(game?.phase==="voting")paintRx()}));
 }
 let roomOk=false,online=new Set(),offSince={};
 async function joinRoom(){
@@ -240,7 +243,7 @@ async function hostDrive(){
       const got=sketches.filter(s=>s.round===game.round).length;
       if(activePlayers().every(p=>sketches.some(s=>s.round===game.round&&s.pid===p.id))||now>game.endsAt+5000)await gref().update({phase:"voting",endsAt:now+VOTE_MS});
     }else if(game.phase==="voting"){
-      if(activePlayers().every(p=>hasVoted(p.id))){
+      if(activePlayers().every(p=>hasVoted(p.id))||now>game.endsAt+5000){
         const add={};votes.filter(v=>v.round===game.round&&v.pick&&(v.pick!==v.voter||canSelfVote())).forEach(v=>{add[v.pick]=(add[v.pick]||0)+1});
         for(const p of players){if(add[p.id])await db.doc("games/"+code+"/players/"+p.id).update({score:(p.score||0)+add[p.id]})}
         await gref().update({phase:"results",endsAt:now+30000,lastAdd:add,host:me});
@@ -266,7 +269,7 @@ async function startGame(avoid=[],gone=[]){
 function timerUpdate(){
   const t=$("#tm");if(!t||!game)return;const total=game.phase==="drawing"?DRAW_MS:game.phase==="voting"?VOTE_MS:30000;
   const left=Math.max(0,game.endsAt-NOW()),sec=Math.ceil(left/1000);
-  t.querySelector("b").textContent=sec;const c=t.querySelector(".fg");c.style.strokeDashoffset=226*(1-left/total);
+  t.querySelector("b").textContent=sec;const c=t.querySelector(".fg");c.style.strokeDashoffset=-226*(1-left/total);
   c.style.stroke=sec<=10?"#E05555":"#4CC38A";if(game.phase!=="drawing"&&game.phase!=="voting")return;
   if(game.phase==="drawing"&&left<=0&&!submitted[game.round])submitSketch();
   if(game.phase==="voting"&&left<=0&&!$("#tm").dataset.over){$("#tm").dataset.over=1;render()}
@@ -282,7 +285,8 @@ function openEndModal(){const m=$("#md");m.hidden=false;$("#mdn").focus();
     b.disabled=false;b.textContent="End game";close();S.notice="You ended the game.";goHome()}}
 // How many players gave sketch pid reaction i in round r (my current-round reactions come from local state so taps show instantly)
 function rxN(pid,i,r){const on=x=>typeof x==="string"&&x[i]==="1";return reacts.filter(x=>x.round===r&&!(r===game?.round&&x.voter===me)&&on(x.r[pid])).length+(r===game?.round&&on(myRx[pid])?1:0)}
-const rxBar=s=>`<div class="rxs">${RX.map((e,i)=>{const n=rxN(s.pid,i,game.round),on=(myRx[s.pid]||"000")[i]==="1";return`<button class="rx${on?" on":""}" data-p="${s.pid}" data-i="${i}" aria-pressed="${on}" aria-label="React ${e}">${e}${n?`<span>${n}</span>`:""}</button>`}).join("")}</div>`;
+function paintRx(){app.querySelectorAll(".rx").forEach(b=>{const p=b.dataset.p,i=+b.dataset.i,on=(myRx[p]||"000")[i]==="1";b.classList.toggle("on",on);b.setAttribute("aria-pressed",on);b.querySelector(".n").textContent=rxN(p,i,game.round)||""})}
+const rxBar=s=>`<div class="rxs">${RX.map((e,i)=>{const n=rxN(s.pid,i,game.round),on=(myRx[s.pid]||"000")[i]==="1";return`<button class="rx${on?" on":""}" data-p="${s.pid}" data-i="${i}" aria-pressed="${on}" aria-label="React ${e}">${e}<span class="n">${n||""}</span></button>`}).join("")}</div>`;
 // Confetti over the final results: about 4 seconds of falling paper in the game colours, once per finished game
 let confettiFor="";
 function confetti(){
@@ -366,11 +370,12 @@ function render(){
     const waiting=act.filter(p=>!hasVoted(p.id)).map(p=>esc(p.name)).join(", ");
     const W=game.word.replace(/\b\w/g,c=>c.toUpperCase());
     app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} · Voting</span><h2 style="margin-top:14px">Vote for your favourite '${esc(W)}' sketch</h2><p style="margin:0">Pick one. You can change your pick until the timer ends.</p></div>${timerHTML()}</div>
-    <div class="hint" style="${over?"":"background:#DDF5E9;color:#0F5C3B"}">${over&&waiting?`Time's up! Waiting for ${waiting} to pick a favourite...`:`${done.length}/${act.length} players have picked a favourite`}</div>
+    <div class="hint" style="${over?"":"background:#DDF5E9;color:#0F5C3B"}">${over&&waiting?`Time's up! Counting the votes…`:`${done.length}/${act.length} players have picked a favourite`}</div>
     <div class="grid">${list.map(s=>{const own=s.pid===me&&!self;return own?`<div class="sk own"><img src="${s.img}" alt="your sketch"><div class="row" style="margin-top:14px">${av({id:s.pid,name:pname(s.pid)})}<b>${esc(pname(s.pid))}</b><span class="muted">(you)</span></div>${rxBar(s)}<p class="center" style="margin:14px 0 0">You can't vote for your own sketch</p></div>`:`<div class="sk pick${myPick===s.pid?" sel":""}" data-p="${s.pid}" role="button" tabindex="0">${myPick===s.pid?`<span class="badge">✓ Your favourite</span>`:""}<img src="${s.img}" alt="sketch"><div class="row" style="margin-top:14px">${av({id:s.pid,name:pname(s.pid)})}<b>${esc(pname(s.pid))}</b>${s.pid===me?'<span class="muted">(you)</span>':""}</div>${rxBar(s)}
       <button class="btn ${myPick===s.pid?"tert":"lite"}" style="width:100%;margin-top:14px">${myPick===s.pid?"Selected":"My favourite"}</button></div>`}).join("")||"<p>No sketches came in this round.</p>"}</div>`;
     app.querySelectorAll(".sk.pick").forEach(c=>{const go=()=>{myPick=c.dataset.p;render();saveVotes()};c.onclick=go;c.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go()}}});
-    app.querySelectorAll(".rx").forEach(b=>{b.onkeydown=e=>e.stopPropagation();b.onclick=e=>{e.stopPropagation();const p=b.dataset.p,i=+b.dataset.i,a=(myRx[p]||"000").split("");a[i]=a[i]==="1"?"0":"1";myRx[p]=a.join("");render();saveRx()}});
+    app.querySelectorAll(".rx").forEach(b=>{b.onkeydown=e=>e.stopPropagation();b.onclick=e=>{e.stopPropagation();const p=b.dataset.p,i=+b.dataset.i,a=(myRx[p]||"000").split("");a[i]=a[i]==="1"?"0":"1";myRx[p]=a.join("");paintRx();saveRx();
+      if(a[i]==="1"){b.classList.remove("pop");void b.offsetWidth;b.classList.add("pop");const fx=document.createElement("span");fx.className="fly";fx.setAttribute("aria-hidden","true");fx.textContent=RX[i];b.appendChild(fx);fx.onanimationend=()=>fx.remove()}}});
     timerUpdate();
     return;
   }
@@ -380,18 +385,18 @@ function render(){
     const keep=[...app.querySelectorAll(".gal .grid")].map(g=>g.scrollLeft);// redraws happen as players leave; keep gallery rows where they were
     const you=p=>p.id===me?' <span class="muted">(you)</span>':"";
     // Tied scores share a rank (1, 1, 3) and everyone on the top score gets a crown
-    const rk=p=>1+ranked.filter(q=>q.score>p.score).length,top=ranked[0]?.score||0,crown=p=>p.score===top?"👑 ":"",vt=n=>`${n} ${n===1?"vote":"votes"}`;
+    const vp=n=>`⭐ ${n}<span class="vw"> ${n===1?"vote":"votes"}</span>`,rk=p=>1+ranked.filter(q=>q.score>p.score).length,top=ranked[0]?.score||0,crown=p=>p.score===top?"👑 ":"",vt=n=>`${n} ${n===1?"vote":"votes"}`;
     if(fin){
       const M=["🥇","🥈","🥉"],cls=["first","second","third"];
       const win=ranked.filter(p=>p.score===top),names=win.map(p=>esc(p.name)),list=names.length>1?names.slice(0,-1).join(", ")+" and "+names.at(-1):names[0];
       app.innerHTML=`<div class="trophy">🏆</div><h1 class="center">${win.length>1?"It's a tie!":`${list} wins!`}</h1><p class="center">${win.length>1?`${list} tied on ${vt(top)} after ${ROUNDS} rounds`:`${vt(top)} after ${ROUNDS} rounds`}</p>
-      <div class="pod">${ranked.slice(0,3).map(p=>`<div class="pl ${cls[rk(p)-1]}" style="justify-content:space-between"><div class="row"><span class="medal">${M[rk(p)-1]}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>
-      ${ranked.length>3?`<div class="sub">Everyone else</div><div class="board" style="display:grid;gap:12px;margin-top:14px">${ranked.slice(3).map(p=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">⭐ ${vt(p.score)}</span></div>`).join("")}</div>`:""}
+      <div class="pod">${ranked.slice(0,3).map(p=>`<div class="pl ${cls[rk(p)-1]}" style="justify-content:space-between"><div class="row"><span class="medal">${M[rk(p)-1]}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">${vp(p.score)}</span></div>`).join("")}</div>
+      ${ranked.length>3?`<div class="sub">Everyone else</div><div class="board" style="display:grid;gap:12px;margin-top:14px">${ranked.slice(3).map(p=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span><b>${crown(p)}${esc(p.name)}</b>${you(p)}</div><span class="pill">${vp(p.score)}</span></div>`).join("")}</div>`:""}
       ${galleryHTML()}
       <div class="row" style="margin-top:32px;justify-content:center">${isHost()?`<button class="btn tert" id="rs">Restart game</button>`:""}<button class="btn ghost" id="lv">Back to the start</button></div>`;
     }else{
       app.innerHTML=`<div class="hud"><div><span class="pill">Round ${game.round} results</span><h2 style="margin-top:14px">Leaderboard</h2><p style="margin:0">${game.round<ROUNDS?"Next round starts soon...":"Final scores when the timer ends"}</p></div>${timerHTML()}</div>
-      <div class="board" style="display:grid;gap:12px">${ranked.map((p,i)=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span>${av(p)}<b>${esc(p.name)}</b>${you(p)}</div><div class="row">${add[p.id]?`<span class="pill" style="color:var(--ok)">+${add[p.id]}</span>`:""}<span class="pill">⭐ ${p.score||0} ${(p.score||0)===1?"vote":"votes"}</span></div></div>`).join("")}</div>
+      <div class="board" style="display:grid;gap:12px">${ranked.map((p,i)=>`<div class="pl"><div class="row"><span class="rank">${rk(p)}</span>${av(p)}<b>${esc(p.name)}</b>${you(p)}</div><div class="row">${add[p.id]?`<span class="pill" style="color:var(--ok)">+${add[p.id]}</span>`:""}<span class="pill">${vp(p.score)}</span></div></div>`).join("")}</div>
       <div class="row" style="margin-top:28px;justify-content:center">${isHost()?`<button class="btn tert" id="nx">${game.round<ROUNDS?"Start next round":"See final results"} →</button>`:`<p class="muted center" style="margin:0">Waiting for the host…</p>`}</div>`;
       if(isHost())$("#nx").onclick=async()=>{$("#nx").disabled=true;try{await gref().update({endsAt:NOW()})}catch(e){$("#nx").disabled=false}};
       timerUpdate();
